@@ -6,8 +6,6 @@ This project reference from:
 - Kristian version: http://www.modlog.net/?p=907
 - Patrick Warichet: https://github.com/pwariche/ArduinoCDP
 
-
-- Ethercard libarry for ENC28J60: https://github.com/jcw/ethercard and I modified its ARP request times in Ethercard::packetLoop for PING.
-
-
-- Chris van Marle's DebounceButton library: https://github.com/qistoph/ArduinoDebounceButton
+Library:
+1. Ethercard for ENC28J60: https://github.com/jcw/ethercard and I modified its ARP request times in Ethercard::packetLoop for PING.
+2. Chris van Marle's DebounceButton: https://github.com/qistoph/ArduinoDebounceButton
