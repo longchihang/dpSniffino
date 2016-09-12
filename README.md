@@ -6,9 +6,6 @@ An Arduino CDP/EDP/LLDP Sniffer
    - Kristian version: http://www.modlog.net/?p=907
    - Patrick Warichet: https://github.com/pwariche/ArduinoCDP
 
-Ethercard libarry for ENC28J60: 
-   https://github.com/jcw/ethercard
-   and I modified its ARP request times in Ethercard::packetLoop for PING.
+* Ethercard libarry for ENC28J60: https://github.com/jcw/ethercard and I modified its ARP request times in Ethercard::packetLoop for PING.
 
-Chris van Marle's DebounceButton library:
-   https://github.com/qistoph/ArduinoDebounceButton
+* Chris van Marle's DebounceButton library: https://github.com/qistoph/ArduinoDebounceButton
