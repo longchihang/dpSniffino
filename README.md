@@ -1,7 +1,7 @@
 # dpSniffino
 An Arduino CDP/EDP/LLDP Sniffer
 
-* This project reference from:
+This project reference from:
    - Chris van Marle's CDPSniffino http://qistoph.blogspot.com/2012/03/arduino-cdp-viewer.html
    - Kristian version: http://www.modlog.net/?p=907
    - Patrick Warichet: https://github.com/pwariche/ArduinoCDP
