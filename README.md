@@ -1,6 +1,8 @@
 # dpSniffino #
 An Arduino CDP/EDP/LLDP Sniffer
-I have verified EDP and LLDP with real hardware. dpSniffino can detect Extreme switch EDP in SummitX430, X440, X450 and X460; Juniper switch LLDP in Ex2200 and Ex4200.
+I have verified EDP and LLDP with those real hardware. 
+Extreme switch EDP in SummitX430, X440 (G1), X450 (G1) and X460 (G1);
+Juniper switch LLDP in Ex2200 and Ex4200;
 
 
 ![Alt text](/photo/edp.jpg?raw=true "Trace EDP...")
