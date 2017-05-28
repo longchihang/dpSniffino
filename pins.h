@@ -1,7 +1,7 @@
 #ifndef _PINS_H_
 #define _PINS_H_
 
-#define VERSION_STR "0.5"
+#define VERSION_STR "0.6"
 
 #define PIN_BUTTON_UP      6
 #define PIN_BUTTON_DOWN    7

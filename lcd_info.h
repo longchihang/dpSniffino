@@ -38,7 +38,7 @@ void lcd_info_current_menu_set(int8_t menu = MENU_NOTHING, int8_t menu_size = 0,
 void lcd_info_current_menu_item_set(int8_t item = MENUITEM_NOTHING);
 
 
-menu_item* lcd_info_menu_item_setup(int item_index, const __FlashStringHelper* p_label, char buffer[], size_t* p_buffer_index, int8_t value_buffer_size, const __FlashStringHelper* p_value = NULL);
+menu_item* lcd_info_menu_item_setup(int item_index, const __FlashStringHelper* p_label, char buffer[], size_t* p_buffer_index, int8_t value_buffer_size/*, const __FlashStringHelper* p_value = NULL*/);
 void lcd_info_current_menu_item_ensure_visible(bool direction_next, bool current_menu_item_check_first);
 void lcd_info_current_menu_item_down();
 void lcd_info_current_menu_item_up();

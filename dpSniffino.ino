@@ -37,15 +37,16 @@
 #define MENUITEM_VALUEBUFFERSIZE_MAIN_SAVE_CONFIG         2
 #define MENUITEM_VALUEBUFFERSIZE_MAIN_REBOOT              1
 
-#define MENUITEM_CDP_VERSION                              0
-#define MENUITEM_CDP_PORT_ID                              1
-#define MENUITEM_CDP_DEVICE_ID                            2
-#define MENUITEM_CDP_DEVICE_MAC                           3
-#define MENUITEM_CDP_ADDRESSES                            4
-#define MENUITEM_CDP_NATIVE_VLAN                          5
-#define MENUITEM_CDP_SOFTWARE                             6
-#define MENUITEM_CDP_PLATFORM                             7
-#define MENUITEM_CDP_DUPLEX                               8
+#define MENUITEM_CDP_SUMMARY                              0
+#define MENUITEM_CDP_VERSION                              1
+#define MENUITEM_CDP_PORT_ID                              2
+#define MENUITEM_CDP_DEVICE_ID                            3
+#define MENUITEM_CDP_DEVICE_MAC                           4
+#define MENUITEM_CDP_ADDRESSES                            5
+#define MENUITEM_CDP_NATIVE_VLAN                          6
+#define MENUITEM_CDP_SOFTWARE                             7
+#define MENUITEM_CDP_PLATFORM                             8
+#define MENUITEM_CDP_DUPLEX                               9
 #define MENUITEM_VALUEBUFFERSIZE_CDP_VERSION              3
 #define MENUITEM_VALUEBUFFERSIZE_CDP_PORT_ID              21
 #define MENUITEM_VALUEBUFFERSIZE_CDP_DEVICE_ID            21
@@ -56,12 +57,12 @@
 #define MENUITEM_VALUEBUFFERSIZE_CDP_PLATFORM             21
 #define MENUITEM_VALUEBUFFERSIZE_CDP_DUPLEX               5
 
-
-#define MENUITEM_EDP_VERSION                              0
-#define MENUITEM_EDP_SLOT_PORT                            1
-#define MENUITEM_EDP_DEVICE_NAME                          2
-#define MENUITEM_EDP_DEVICE_MAC                           3
-#define MENUITEM_EDP_SOFTWARE_VERSION                     4
+#define MENUITEM_EDP_SUMMARY                              0
+#define MENUITEM_EDP_VERSION                              1
+#define MENUITEM_EDP_SLOT_PORT                            2
+#define MENUITEM_EDP_DEVICE_NAME                          3
+#define MENUITEM_EDP_DEVICE_MAC                           4
+#define MENUITEM_EDP_SOFTWARE_VERSION                     5
 #define MENUITEM_VALUEBUFFERSIZE_EDP_VERSION              3
 #define MENUITEM_VALUEBUFFERSIZE_EDP_SLOT_PORT            11
 #define MENUITEM_VALUEBUFFERSIZE_EDP_DEVICE_NAME          21
@@ -69,12 +70,13 @@
 #define MENUITEM_VALUEBUFFERSIZE_EDP_SOFTWARE_VERSION     16
 
 
-#define MENUITEM_LLDP                                     0
-#define MENUITEM_LLDP_PORT_ID                             1
-#define MENUITEM_LLDP_PORT_DESCRIPTION                    2
-#define MENUITEM_LLDP_DEVICE_NAME                         3
-#define MENUITEM_LLDP_DEVICE_MAC                          4
-#define MENUITEM_LLDP_DEVICE_DESCRIPTION                  5
+#define MENUITEM_LLDP_SUMMARY                             0
+#define MENUITEM_LLDP                                     1
+#define MENUITEM_LLDP_PORT_ID                             2
+#define MENUITEM_LLDP_PORT_DESCRIPTION                    3
+#define MENUITEM_LLDP_DEVICE_NAME                         4
+#define MENUITEM_LLDP_DEVICE_MAC                          5
+#define MENUITEM_LLDP_DEVICE_DESCRIPTION                  6
 #define MENUITEM_VALUEBUFFERSIZE_LLDP                     0
 #define MENUITEM_VALUEBUFFERSIZE_LLDP_PORT_ID             21
 #define MENUITEM_VALUEBUFFERSIZE_LLDP_PORT_DESCRIPTION    21
@@ -92,7 +94,7 @@
 #define MENUITEM_VALUEBUFFERSIZE_TCPIP_GATEWAY_IP         16 
 #define MENUITEM_VALUEBUFFERSIZE_TCPIP_DNS_IP             16
 
-menu_item menu_buffer[9] = { //9 - MAX of MENUSIZE
+menu_item menu_buffer[10] = { //10 - MAX of MENUSIZE
 	{ NULL, NULL, 0 }
 };
 
@@ -1167,6 +1169,13 @@ void cdp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 	// To skip LLDP packet if select "Trace CDP/EDP", or when not select "Trace CDP/EDP".
 	if (select_menu_item != MENUITEM_MAIN_TRACE_CDP_EDP) return;
 
+	// 20170521 added
+	// If the first time get cdp packet after enter "Trace CDP",
+	// it should let prepare the current_menu_item_set to MENUITEM_NOTHING
+	// before set current_menu to MENU_CDP.
+	if (current_menu == MENU_MAIN)
+		lcd_info_current_menu_item_set(MENUITEM_NOTHING);
+
 	// current_menu_item to keep current_menu_item on old position of MENU_EDP
 	lcd_info_current_menu_set(MENU_CDP, MENUSIZE_CDP, current_menu_item);
 
@@ -1238,6 +1247,11 @@ void cdp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 			buffer_index++; // skip the '\0', if concat next string, don't skip the '\0'
 
 							//printf("%s: %s\n", pm->label, pm->value);
+
+			// 20170521 added - for summary menu
+			menu_buffer[MENUITEM_CDP_SUMMARY].p_value = pm->p_value;
+			menu_buffer[MENUITEM_CDP_SUMMARY].value_buffer_size = pm->value_buffer_size;
+
 			break;
 
 		case CDP_TLV_TYPE_ADDRESSES:
@@ -1284,11 +1298,17 @@ void cdp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 				label_value_buffer, &buffer_index, MENUITEM_VALUEBUFFERSIZE_CDP_PORT_ID);
 			buffer_index++; // skip the '\0', if concat next string, don't skip the '\0'
 
+			// 20170521 added - for summary menu
+			menu_buffer[MENUITEM_CDP_SUMMARY].p_label = pm->p_value;
+
 			break;
 
 			// case CDP_TLV_TYPE_CAPABILITIES:
 			//		handleCdpCapabilities(packet, packet_index, tlv_length);
 			//		break;
+
+
+
 
 		case CDP_TLV_TYPE_SOFTWARE:
 			pm = lcd_info_menu_item_setup(MENUITEM_CDP_SOFTWARE, (const __FlashStringHelper *)F("Software"), 
@@ -1394,6 +1414,13 @@ void edp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 	// To skip LLDP packet if select "Trace CDP/EDP", or when not select "Trace CDP/EDP".
 	if (select_menu_item != MENUITEM_MAIN_TRACE_CDP_EDP) return;
 
+	// 20170521 added
+	// If the first time get edp packet after enter "Trace EDP",
+	// it should let prepare the current_menu_item_set to MENUITEM_NOTHING
+	// before set current_menu to MENU_EDP.
+	if (current_menu == MENU_MAIN)
+		lcd_info_current_menu_item_set(MENUITEM_NOTHING);
+
 	// current_menu_item to keep current_menu_item on old position of MENU_EDP
 	lcd_info_current_menu_set(MENU_EDP, MENUSIZE_EDP, current_menu_item); 
 
@@ -1464,7 +1491,10 @@ void edp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 				//DEBUG_PRINTLN_VAR(pm->p_label);
 				//DEBUG_PRINTLN_VAR(pm->p_value);
 
-								// virt_chassis + reserved, don't want to display
+				// 20170521 added - for summary menu
+				menu_buffer[MENUITEM_EDP_SUMMARY].p_label = pm->p_value;
+
+				// virt_chassis + reserved, don't want to display
 				*p_packet_index += 8;
 
 				// device version
@@ -1479,6 +1509,8 @@ void edp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 				//DEBUG_PRINTLN_VAR(buffer_index);
 				//DEBUG_PRINTLN_VAR(pm->p_label);
 				//DEBUG_PRINTLN_VAR(pm->p_value);
+
+
 				break;
 
 			case EDP_TLV_TYPE_DISPLAY:
@@ -1491,6 +1523,11 @@ void edp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 				//DEBUG_PRINTLN_VAR(buffer_index);
 				//DEBUG_PRINTLN_VAR(pm->p_label);
 				//DEBUG_PRINTLN_VAR(pm->p_value);
+
+				// 20170521 added - for summary menu
+				menu_buffer[MENUITEM_EDP_SUMMARY].p_value = pm->p_value;
+				menu_buffer[MENUITEM_EDP_SUMMARY].value_buffer_size = pm->value_buffer_size;
+
 				break;
 
 			case EDP_TLV_TYPE_NULL:
@@ -1721,6 +1758,13 @@ void lldp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index
 	// To skip CDP/EDP packet if select "Trace LLDP", or when not select "Trace LLDP".
 	if (select_menu_item != MENUITEM_MAIN_TRACE_LLDP) return;
 
+	// 20170521 added
+	// If the first time get lldp packet after enter "Trace LLDP",
+	// it should let prepare the current_menu_item_set to MENUITEM_NOTHING
+	// before set current_menu to MENU_LLDP.
+	if (current_menu == MENU_MAIN)
+		lcd_info_current_menu_item_set(MENUITEM_NOTHING);
+
 	// current_menu_item to keep current_menu_item on old position of MENU_EDP
 	lcd_info_current_menu_set(MENU_LLDP, MENUSIZE_LLDP, current_menu_item);
 
@@ -1806,6 +1850,9 @@ void lldp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index
 				buffer_index++; // skip the '\0', if concat next string, don't skip the '\0'
 								//lcd_info_menu_item_setup(MENUITEM_DEVICE_MAC, value_mac_buffer);
 				//printf("%s: %s\n", pm->label, pm->value);
+
+
+
 				break;
 			
 			case LLDP_TLV_TYPE_PORT_SUBTYPE_MAC_ADDRESS:
@@ -1827,6 +1874,11 @@ void lldp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index
 			buffer_index++; // skip the '\0'
 							//lcd_info_menu_item_setup(MENUITEM_DEVICE_NAME, value_name_buffer);
 			//printf("%s: [%s]\n", pm->label, pm->value);
+
+
+			// 20170521 added - for summary menu
+			menu_buffer[MENUITEM_LLDP_SUMMARY].p_label = pm->p_value;
+
 			break;
 
 		case LLDP_TLV_TYPE_SYSTEM_NAME:
@@ -1837,6 +1889,10 @@ void lldp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index
 			buffer_index++; // skip the '\0'
 							//lcd_info_menu_item_setup(MENUITEM_DEVICE_NAME, value_name_buffer);
 			//printf("%s: %s\n", pm->label, pm->value);
+
+			// 20170521 added - for summary menu
+			menu_buffer[MENUITEM_LLDP_SUMMARY].p_value = pm->p_value;
+			menu_buffer[MENUITEM_LLDP_SUMMARY].value_buffer_size = pm->value_buffer_size;
 			break;
 
 		case LLDP_TLV_TYPE_SYSTEM_DESCRIPTION:
@@ -2005,7 +2061,7 @@ void ping_test_send_and_lcd_update_response(bool enabled) {
 		}
 	}
 }
-
+/*
 float battery_voltage(int* analogread = NULL) {
 #define MULTIMETER_TEST           4.04; // V
 #define PRE_ANALOGREAD            881;
@@ -2031,6 +2087,38 @@ float battery_voltage(int* analogread = NULL) {
 	float voltage = analogamount * correct;
 	return voltage;
 }
+*/
+
+// https://provideyourown.com/2012/secret-arduino-voltmeter-measure-battery-voltage/
+// https://hackingmajenkoblog.wordpress.com/2016/02/01/making-accurate-adc-readings-on-the-arduino/
+// https://web.archive.org/web/20150218055034/http://code.google.com:80/p/tinkerit/wiki/SecretVoltmeter
+
+long readVcc() {
+	// Read 1.1V reference against AVcc
+	// set the reference to Vcc and the measurement to the internal 1.1V reference
+#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+	ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+#elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+	ADMUX = _BV(MUX5) | _BV(MUX0);
+#elif defined (__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+	ADMUX = _BV(MUX3) | _BV(MUX2);
+#else
+	ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+#endif  
+
+	delay(2); // Wait for Vref to settle
+	ADCSRA |= _BV(ADSC); // Start conversion
+	while (bit_is_set(ADCSRA, ADSC)); // measuring
+
+	uint8_t low = ADCL; // must read ADCL first - it then locks ADCH  
+	uint8_t high = ADCH; // unlocks both
+
+	long result = (high << 8) | low;
+
+	result = 1125300L / result; // Calculate Vcc (in mV); 1125300 = 1.1*1023*1000
+	return result; // Vcc in millivolts
+}
+
 
 void setup() {
 	//wdt_disable(); //always good to disable it, if it was left 'on' or you need init time
@@ -2050,8 +2138,12 @@ void setup() {
 	pinMode(PIN_BATTERY_VOLTAGE, INPUT);
 	analogReference(DEFAULT);
 	int analogread;
-	float voltage = battery_voltage(&analogread);
-	
+	//float voltage = battery_voltage(&analogread);
+
+	float vcc = readVcc() / 1000.0;
+	analogread = analogRead(PIN_BATTERY_VOLTAGE);
+	float voltage = (analogread / 1023.0) * vcc;
+
 	lcd.clear();
 	lcd.print(F("VBAT: "));
 	lcd.setCursor(6, 0);
@@ -2059,7 +2151,8 @@ void setup() {
 	lcd.setCursor(0, 1);
 	lcd.print(analogread);
 	lcd.setCursor(5, 1);
-	lcd.print((analogread >= 3.5) ? F("Battery OK") : F("Low Battery"));
+	//lcd.print((analogread >= 3.5) ? F("Battery OK") : F("Low Battery"));
+	lcd.print((voltage >= 3.5) ? F("Battery OK") : F("Low Battery"));
 	delay(1000);
 
 	cdp_packet_handler = cdp_packet_handler_callback;

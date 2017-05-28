@@ -58,7 +58,7 @@ int8_t lcd_info_select_menu_item_get() {
 }
 
 menu_item* lcd_info_menu_item_setup(int item_index, const __FlashStringHelper* p_label, 
-	char buffer[], size_t* p_buffer_index, int8_t value_buffer_size, const __FlashStringHelper* p_value) {
+	char buffer[], size_t* p_buffer_index, int8_t value_buffer_size/*, const __FlashStringHelper* p_value*/) {
 
 
 	menu_item* pm = &menu_buffer[item_index];
@@ -77,11 +77,11 @@ menu_item* lcd_info_menu_item_setup(int item_index, const __FlashStringHelper* p
 		pm->value_buffer_size = value_buffer_size;
 		memset(pm->p_value, 0, abs(pm->value_buffer_size)); // clear buffer
 	}
-
+	/*
 	if (p_value != NULL) {
 		strcpy_P(pm->p_value, (const char PROGMEM  *)p_value);
 		*p_buffer_index += (strlen(pm->p_value) + 1);
-	}
+	}*/
 
 	return pm;
 }
