@@ -16,7 +16,7 @@
 #define MENU_EDP                                          2
 #define MENU_LLDP                                         3
 #define MENU_TCPIP                                        4
-#define MENUSIZE_MAIN                                     7
+#define MENUSIZE_MAIN                                     8
 #define MENUSIZE_CDP                                      9  
 #define MENUSIZE_EDP                                      5
 #define MENUSIZE_LLDP                                     6
@@ -27,12 +27,14 @@
 #define MENUITEM_MAIN_PING                                2
 #define MENUITEM_MAIN_CONFIG_TCPIP                        3
 #define MENUITEM_MAIN_CONFIG_MY_MAC                       4
-#define MENUITEM_MAIN_SAVE_CONFIG                         5
-#define MENUITEM_MAIN_REBOOT                              6
+#define MENUITEM_MAIN_CONFIG_LLDP_SUMMARY                 5
+#define MENUITEM_MAIN_SAVE_CONFIG                         6
+#define MENUITEM_MAIN_REBOOT                              7
 #define MENUITEM_VALUEBUFFERSIZE_MAIN_TRACE_CDP_EDP       11
 #define MENUITEM_VALUEBUFFERSIZE_MAIN_TRACE_LLDP          MENUITEM_VALUEBUFFERSIZE_MAIN_TRACE_CDP_EDP
 #define MENUITEM_VALUEBUFFERSIZE_MAIN_PING                16
 #define MENUITEM_VALUEBUFFERSIZE_MAIN_CONFIG_TCPIP        2
+#define MENUITEM_VALUEBUFFERSIZE_MAIN_CONFIG_LLDP_SUMMARY 2
 #define MENUITEM_VALUEBUFFERSIZE_MAIN_CONFIG_MY_MAC       13
 #define MENUITEM_VALUEBUFFERSIZE_MAIN_SAVE_CONFIG         2
 #define MENUITEM_VALUEBUFFERSIZE_MAIN_REBOOT              1
@@ -110,6 +112,11 @@ uint8_t dns_ip[]     = { 0x00, 0x00, 0x00, 0x00 };
 #define TCPIP_TYPE_DHCP   1
 #define TCPIP_TYPE_STATIC 2
 uint8_t tcpip_type = TCPIP_TYPE_NONE;
+
+#define LLDP_SUMMARY_TYPE_PORT_ID    0
+#define LLDP_SUMMARY_TYPE_PORT_DESC  1
+uint8_t lldp_summary_type = LLDP_SUMMARY_TYPE_PORT_ID;
+
 uint8_t save_config  = 0;
 
 char label_value_buffer[300];
@@ -428,6 +435,12 @@ void init_main_menu(int8_t item = MENUITEM_NOTHING) {
 	snprintnum(pm->p_value, MENUITEM_VALUEBUFFERSIZE_MAIN_CONFIG_TCPIP, tcpip_type, 10);
 	buffer_index += (MENUITEM_VALUEBUFFERSIZE_MAIN_CONFIG_TCPIP + 1);
 
+	// lldp summary // 20200410 modified - for choosing show lldp port or desc to summary
+	pm = lcd_info_menu_item_setup(MENUITEM_MAIN_CONFIG_LLDP_SUMMARY, (const __FlashStringHelper*)F("Config LLDP sum"),
+		label_value_buffer, &buffer_index, -MENUITEM_VALUEBUFFERSIZE_MAIN_CONFIG_LLDP_SUMMARY);
+	snprintnum(pm->p_value, MENUITEM_VALUEBUFFERSIZE_MAIN_CONFIG_LLDP_SUMMARY, lldp_summary_type, 10);
+	buffer_index += (MENUITEM_VALUEBUFFERSIZE_MAIN_CONFIG_LLDP_SUMMARY + 1);
+
 	// save config
 	pm = lcd_info_menu_item_setup(MENUITEM_MAIN_SAVE_CONFIG, (const __FlashStringHelper *)F("Save config"),
 		label_value_buffer, &buffer_index, -MENUITEM_VALUEBUFFERSIZE_MAIN_SAVE_CONFIG);
@@ -604,6 +617,9 @@ void btnUp_click_hold(DebounceButton* btn) {
 			case MENUITEM_MAIN_CONFIG_TCPIP:
 				lcd_info_current_menu_item_edit_value_up(3);
 				break;
+			case MENUITEM_MAIN_CONFIG_LLDP_SUMMARY: // 20200410 modified - for choosing show lldp port or desc to summary
+				lcd_info_current_menu_item_edit_value_up(2);
+				break;
 			case MENUITEM_MAIN_SAVE_CONFIG:
 				lcd_info_current_menu_item_edit_value_up(2);
 				break;
@@ -663,6 +679,9 @@ void btnDown_click_hold(DebounceButton* btn) {
 			case MENUITEM_MAIN_CONFIG_TCPIP:
 				lcd_info_current_menu_item_edit_value_down(3);
 				break;
+			case MENUITEM_MAIN_CONFIG_LLDP_SUMMARY: // 20200410 modified - for choosing show lldp port or desc to summary
+				lcd_info_current_menu_item_edit_value_down(2);
+				break;
 			case MENUITEM_MAIN_SAVE_CONFIG:
 				lcd_info_current_menu_item_edit_value_down(2);
 				break;
@@ -677,7 +696,7 @@ void btnDown_click_hold(DebounceButton* btn) {
 		else if (lcd_info_menu_item_was_click_selected()) {
 		}
 		else if (lcd_info_menu_item_was_hold_selected()) {
-			// edit ip value up 
+			// edit ip value down
 			if (tcpip_type == TCPIP_TYPE_STATIC) {
 				lcd_info_current_menu_item_edit_value_down(10);
 			}
@@ -762,6 +781,7 @@ void btnLeft_click_hold(DebounceButton* btn) {
 			break;
 		case MENUITEM_MAIN_CONFIG_MY_MAC:
 		case MENUITEM_MAIN_CONFIG_TCPIP:
+		case MENUITEM_MAIN_CONFIG_LLDP_SUMMARY: // 20200410 modified - for choosing show lldp port or desc to summary
 		case MENUITEM_MAIN_SAVE_CONFIG:
 			if (lcd_info_menu_item_was_hold_selected()) {
 				//select_menu_item = MENUITEM_NOTHING;
@@ -836,6 +856,7 @@ void btnRight_click(DebounceButton* btn) {
 				break;
 			case MENUITEM_MAIN_CONFIG_MY_MAC:
 			case MENUITEM_MAIN_CONFIG_TCPIP:
+			case MENUITEM_MAIN_CONFIG_LLDP_SUMMARY: // 20200410 modified - for choosing show lldp port or desc to summary
 			case MENUITEM_MAIN_SAVE_CONFIG:
 				DEBUG_PRINTLN(F("(SELECT to move cursor) "));
 				lcd_info_current_menu_item_edit_value_move_cursor();
@@ -888,6 +909,7 @@ void btnRight_hold(DebounceButton* btn) {
 				break;
 			case MENUITEM_MAIN_CONFIG_MY_MAC:
 			case MENUITEM_MAIN_CONFIG_TCPIP:
+			case MENUITEM_MAIN_CONFIG_LLDP_SUMMARY: // 20200410 modified - for choosing show lldp port or desc to summary
 			case MENUITEM_MAIN_SAVE_CONFIG:
 				DEBUG_PRINTLN(F("(Select to edit) "));
 				lcd_info_select_menu_item_set(current_menu, current_menu_item + MENUITEM_SELECT_BY_HOLD);
@@ -960,6 +982,20 @@ void btnRight_hold(DebounceButton* btn) {
 				}
 				break;
 
+			case MENUITEM_MAIN_CONFIG_LLDP_SUMMARY: // 20200410 modified - for choosing show lldp port or desc to summary
+				DEBUG_PRINTLN(F("(SELECT to update) "));
+				{
+					menu_item* pcm = &menu_buffer[current_menu_item];
+					uint8_t temp = hex2val(*pcm->p_value);
+					// Static ip and Dhcp can force to do without edit_value_is_changed.
+					if (edit_value_is_changed || tcpip_type == LLDP_SUMMARY_TYPE_PORT_ID || tcpip_type == LLDP_SUMMARY_TYPE_PORT_DESC) {
+						lldp_summary_type = temp;
+						snprintnum(pcm->p_value, 2, lldp_summary_type, 10);
+					}
+					lcd_info_current_menu_item_edit_value_back();
+				}
+				break;
+
 			case MENUITEM_MAIN_SAVE_CONFIG:
 				DEBUG_PRINTLN(F("(SELECT to save) "));
 
@@ -972,6 +1008,7 @@ void btnRight_hold(DebounceButton* btn) {
 						eeprom_write_mac();
 						eeprom_write_tcpip();
 						eeprom_write_tcpip_addresses();
+						eeprom_write_lldp_summary(); // 20200410 modified - for choosing show lldp port or desc to summary
 
 						save_config = 0;
 						snprintnum(pcm->p_value, 2, save_config, 10);
@@ -1176,7 +1213,7 @@ void cdp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 	if (current_menu == MENU_MAIN)
 		lcd_info_current_menu_item_set(MENUITEM_NOTHING);
 
-	// current_menu_item to keep current_menu_item on old position of MENU_EDP
+	// current_menu_item to keep current_menu_item on old position of MENU_CDP
 	lcd_info_current_menu_set(MENU_CDP, MENUSIZE_CDP, current_menu_item);
 
 	//DEBUG_PRINTLN_WITH_TITLE(F("Recv from: "), DEBUG_PRINT_HEX(source_mac, 0, MAC_LENGTH));
@@ -1765,7 +1802,7 @@ void lldp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index
 	if (current_menu == MENU_MAIN)
 		lcd_info_current_menu_item_set(MENUITEM_NOTHING);
 
-	// current_menu_item to keep current_menu_item on old position of MENU_EDP
+	// current_menu_item to keep current_menu_item on old position of MENU_LLDP
 	lcd_info_current_menu_set(MENU_LLDP, MENUSIZE_LLDP, current_menu_item);
 
 
@@ -1799,6 +1836,7 @@ void lldp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index
 #define LLDP_TLV_TYPE_PORT_SUBTYPE_AGENT_CIRCUIT_ID      0x06
 #define LLDP_TLV_TYPE_PORT_SUBTYPE_LOCALLY_ASSIGNED      0x07
 
+	char* p_lldp_port_id = NULL, *p_lldp_port_description = NULL;
 	while (*p_packet_index < packet_length) { // read all remaining TLV fields
 		uint8_t tlv_type = (packet[*p_packet_index] >> 1);
 		uint16_t tlv_length = ((packet[*p_packet_index] & 0x01) << 8) | packet[*p_packet_index + 1];
@@ -1851,7 +1889,11 @@ void lldp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index
 								//lcd_info_menu_item_setup(MENUITEM_DEVICE_MAC, value_mac_buffer);
 				//printf("%s: %s\n", pm->label, pm->value);
 
-
+			// 20170521 added - for summary menu
+			// 20200410 modified - for choosing show lldp port or desc to summary
+			// if (lldp_summary_type == LLDP_SUMMARY_TYPE_PORT_ID)
+			//	menu_buffer[MENUITEM_LLDP_SUMMARY].p_label = pm->p_value;
+				p_lldp_port_id = pm->p_value;
 
 				break;
 			
@@ -1875,9 +1917,11 @@ void lldp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index
 							//lcd_info_menu_item_setup(MENUITEM_DEVICE_NAME, value_name_buffer);
 			//printf("%s: [%s]\n", pm->label, pm->value);
 
-
 			// 20170521 added - for summary menu
-			menu_buffer[MENUITEM_LLDP_SUMMARY].p_label = pm->p_value;
+			// 20200410 modified - for choosing show lldp port or desc to summary
+			// if (lldp_summary_type == LLDP_SUMMARY_TYPE_PORT_DESC)
+			//	// menu_buffer[MENUITEM_LLDP_SUMMARY].p_label = pm->p_value;
+			p_lldp_port_description = pm->p_value;
 
 			break;
 
@@ -1912,6 +1956,22 @@ void lldp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index
 		}
 		*p_packet_index = next_tlv;
 	}
+	// 20200410 modified - for choosing show lldp port or desc to summary
+	// If we choose summary show port-id, and port-id got, show port-id,
+	// however, if only port-desc got (no port-id), still to show port-desc.
+	if (lldp_summary_type == LLDP_SUMMARY_TYPE_PORT_ID) {
+		if (p_lldp_port_id != NULL)
+			menu_buffer[MENUITEM_LLDP_SUMMARY].p_label = p_lldp_port_id;
+		else if (p_lldp_port_description != NULL)
+			menu_buffer[MENUITEM_LLDP_SUMMARY].p_label = p_lldp_port_description;
+	}
+	else if (lldp_summary_type == LLDP_SUMMARY_TYPE_PORT_DESC) {
+		if (p_lldp_port_description != NULL)
+			menu_buffer[MENUITEM_LLDP_SUMMARY].p_label = p_lldp_port_description;
+		else if (p_lldp_port_id != NULL)
+			menu_buffer[MENUITEM_LLDP_SUMMARY].p_label = p_lldp_port_id;
+	}
+
 	// ensure to show the first visible item in menu
 	lcd_info_current_menu_item_ensure_visible(DIRECTION_NEXT, true);
 }
@@ -1932,6 +1992,7 @@ void update_lines_callback() {
 	case MENU_MAIN:
 		switch (current_menu_item) {
 		case MENUITEM_MAIN_CONFIG_TCPIP:
+		case MENUITEM_MAIN_CONFIG_LLDP_SUMMARY: // 20200410 modified - for choosing show lldp port or desc to summary
 		case MENUITEM_MAIN_SAVE_CONFIG:
 			pcm = &menu_buffer[current_menu_item];
 			value = hex2val(*pcm->p_value);
@@ -1943,6 +2004,12 @@ void update_lines_callback() {
 				case 0: lcd.print(F(":None")); break;
 				case 1: lcd.print(F(":DHCP")); break;
 				case 2: lcd.print(F(":Static")); break;
+				}
+				break;
+			case MENUITEM_MAIN_CONFIG_LLDP_SUMMARY:
+				switch (value) {
+				case 0: lcd.print(F(":Port id")); break;
+				case 1: lcd.print(F(":Port desc")); break;
 				}
 				break;
 			case MENUITEM_MAIN_SAVE_CONFIG:
@@ -2011,6 +2078,18 @@ void eeprom_write_tcpip_addresses() {
 			EEPROM.write(22 + i, ether.dnsip[i]);
 		}
 	}
+}
+
+// 20200410 modified - for choosing show lldp port or desc to summary
+void eeprom_read_lldp_summary() {
+	if (EEPROM.read(26) == 1) {
+		lldp_summary_type = (uint8_t)EEPROM.read(27);
+	}
+}
+// 20200410 modified - for choosing show lldp port or desc to summary
+void eeprom_write_lldp_summary() {
+	EEPROM.write(26, 1);
+	EEPROM.write(27, lldp_summary_type);
 }
 
 
@@ -2171,6 +2250,7 @@ void setup() {
 	eeprom_read_mac();
 	eeprom_read_tcpip();
 	eeprom_read_tcpip_addresses();
+	eeprom_read_lldp_summary(); // 20200410 modified - for choosing show lldp port or desc to summary
 
 	init_main_menu(MENUITEM_NOTHING);
 	lcd_info_select_menu_item_set(MENUITEM_NOTHING);
