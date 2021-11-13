@@ -23,6 +23,11 @@ typedef uint8_t dp_status;
 #define MAC_LENGTH 6
 #define IP_LENGTH 4
 
+// 20211021
+#define IP_IN_GROUP_MAX_LENGTH 16
+// (IP_LENGTH * 3 + 4) * 4 + 1
+// e.g. 192.168.111.222,192.168.111.333\0 each IP is 16
+
 
 // Public functions
 void dp_listener_init();

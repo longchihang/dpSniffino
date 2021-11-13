@@ -17,9 +17,9 @@
 #define MENU_LLDP                                         3
 #define MENU_TCPIP                                        4
 #define MENUSIZE_MAIN                                     8
-#define MENUSIZE_CDP                                      9  
-#define MENUSIZE_EDP                                      5
-#define MENUSIZE_LLDP                                     6
+#define MENUSIZE_CDP                                      10
+#define MENUSIZE_EDP                                      6
+#define MENUSIZE_LLDP                                     7
 #define MENUSIZE_TCPIP                                    4
 
 #define MENUITEM_MAIN_TRACE_CDP_EDP                       0
@@ -96,7 +96,9 @@
 #define MENUITEM_VALUEBUFFERSIZE_TCPIP_GATEWAY_IP         16 
 #define MENUITEM_VALUEBUFFERSIZE_TCPIP_DNS_IP             16
 
-menu_item menu_buffer[10] = { //10 - MAX of MENUSIZE
+// 20211021 - add MAX_MENUITEM_COUNT macro
+#define MAX_MENUITEM_COUNT 10
+menu_item menu_buffer[MAX_MENUITEM_COUNT] = { //10 - MAX Count of MENUITEM 
 	{ NULL, NULL, 0 }
 };
 
@@ -119,7 +121,9 @@ uint8_t lldp_summary_type = LLDP_SUMMARY_TYPE_PORT_ID;
 
 uint8_t save_config  = 0;
 
-char label_value_buffer[300];
+/* 20211021 - fix cdp summary garbled */
+#define LABEL_VALUE_BUFFER_SIZE 380
+char label_value_buffer[LABEL_VALUE_BUFFER_SIZE];
 
 //uint32_t last_lcd_update = 0;
 uint32_t last_lcd_progress_update = 0;
@@ -219,9 +223,8 @@ void init_nic() {
 }
 
 
-
-
-
+// 20211021 - Shorten CDP Port ID 
+#define MODIFIER_CDP_SHORTEN_PORT_ID 1
 void handleAsciiField(
 	const uint8_t packet[], size_t* p_index, uint16_t field_length,
 	char buffer[], size_t* p_buffer_index, size_t buffer_size, uint8_t modifier = 0, int modifier_value = 0) {
@@ -230,8 +233,25 @@ void handleAsciiField(
 
 	buffer_size--; // is for the tail '\0' space
 	buffer_size += *p_buffer_index; // let buffer_size offset from current *p_buffer_index
-
+	
+	// 20211021 - Shorten CDP Port ID
+	// e.g. GigabitEthernet0/1 --> GigaEth0/1
+	//      FastEthernet0/1 --> FastEth0/1
+	const uint8_t * p_remove[] = { "ernet", "bit" };
+	int p = 0; 
 	for (uint16_t i = 0; i < field_length && i < buffer_size; ++i) {
+		if (p == 0 && modifier == MODIFIER_CDP_SHORTEN_PORT_ID) { // only remove "ernet" once
+			for ( int j = 0; j < sizeof(p_remove)/sizeof(const uint8_t *); j++) {
+				while ( *( p_remove[j] + p ) == packet[(*p_index) + p] ) {
+					p++;
+				}
+				if ( *( p_remove[j] + p ) == '\0' ) {
+					(*p_index) += p;
+					p = 0;
+					continue;
+				}	
+			}
+		}
 		buffer[(*p_buffer_index)++] = packet[(*p_index)++];
 	}
 	buffer[*p_buffer_index] = '\0';
@@ -329,7 +349,7 @@ void handleCdpAddresses(const uint8_t packet[], size_t* p_index, uint16_t field_
 		| packet[*p_index + 3];
 	*p_index += 4;
 	// it should not to handle many IP 
-	if (addresses_count > 4) return;
+	if (addresses_count > /* 20211021*/ /* 4 */ buffer_size / IP_IN_GROUP_MAX_LENGTH ) return;
 
 	uint8_t protocol_type = packet[(*p_index)++];
 	uint8_t protocol_length = packet[(*p_index)++];
@@ -339,13 +359,15 @@ void handleCdpAddresses(const uint8_t packet[], size_t* p_index, uint16_t field_
 	//}
 	*p_index += protocol_length;
 	uint16_t address_length = (packet[*p_index] << 8) | packet[*p_index + 1];
+	// 20211113
+	if(address_length > IP_LENGTH) return; // only support ipv4
 	*p_index += 2;
 
 	//buffer_index = 0;
 	handleMultiField(&handleNumField,
 		packet, p_index, 1,
 		buffer, p_buffer_index, buffer_size,
-		IP_LENGTH, '.', (uint8_t)addresses_count, ',');
+		IP_LENGTH , '.', (uint8_t)addresses_count, ',');
 }
 
 
@@ -1332,7 +1354,7 @@ void cdp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 			pm = lcd_info_menu_item_setup(MENUITEM_CDP_PORT_ID, (const __FlashStringHelper *)F("Port id"), 
 									label_value_buffer, &buffer_index, MENUITEM_VALUEBUFFERSIZE_CDP_PORT_ID);
 			handleAsciiField(packet, p_packet_index, tlv_length,
-				label_value_buffer, &buffer_index, MENUITEM_VALUEBUFFERSIZE_CDP_PORT_ID);
+				label_value_buffer, &buffer_index, MENUITEM_VALUEBUFFERSIZE_CDP_PORT_ID, MODIFIER_CDP_SHORTEN_PORT_ID);
 			buffer_index++; // skip the '\0', if concat next string, don't skip the '\0'
 
 			// 20170521 added - for summary menu
@@ -1383,10 +1405,13 @@ void cdp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 			pm = lcd_info_menu_item_setup(MENUITEM_CDP_DUPLEX, (const __FlashStringHelper *)F("Duplex"),
 										label_value_buffer, &buffer_index, MENUITEM_VALUEBUFFERSIZE_CDP_DUPLEX);
 			uint8_t duplex = packet[(*p_packet_index)++];
-			const uint8_t full[] = { 0x46, 0x75, 0x6c, 0x6c }; // Full
-			const uint8_t half[] = { 0x48, 0x61, 0x6c, 0x66 }; // Half
+			// const uint8_t full[] = "Full"; // { 0x46, 0x75, 0x6c, 0x6c }; // Full
+			// const uint8_t half[] = "Half"; // { 0x48, 0x61, 0x6c, 0x66 }; // Half
+			// 20211113 - Modified 
+			const uint8_t * p_duplex[] = { "Half", "Full" };
 			size_t index = 0;
-			handleAsciiField((duplex == 0x01 ? full : half), &index, 4,
+			//handleAsciiField((duplex == 0x01 ? full : half), &index, 4,
+			handleAsciiField(p_duplex[duplex], &index, 4,
 				label_value_buffer, &buffer_index, MENUITEM_VALUEBUFFERSIZE_CDP_DUPLEX);
 			buffer_index++; // skip the '\0', if concat next string, don't skip the '\0'
 
@@ -1399,7 +1424,7 @@ void cdp_packet_handler_callback(const uint8_t packet[], size_t* p_packet_index,
 			//DEBUG_PRINTLN_WITH_TITLE(F("Field: "), 
 			//	DEBUG_PRINT_A_HEX(tlv_type >> 8);
 			//	DEBUG_PRINT_A_HEX(tlv_type & 0xFF); 
-			//	DEBUG_PRINT(", Length: ");
+			//	DEBUG_PRINT(F(", Length: "));
 			//	DEBUG_PRINT_A_DEC(tlv_length););
 			break;
 		}
@@ -2321,4 +2346,3 @@ void loop() {
 	lcd_update();
 	
 }
-

@@ -212,36 +212,34 @@ dp_status dp_listener_update() {
 		}
 	}
 	
-
-
 	switch (status) {
 	case DP_STATUS_CDP:
 		DEBUG_PRINTLN(F("CDP!"));
 		received_time_update();
-		cdp_packet_handler(p_packet, &packet_index, received_packet_length - packet_index, psource_mac);
+		cdp_packet_handler(p_packet, &packet_index, received_packet_length /* 20211021 - fix cdp summary garbled *//* - packet_index */, psource_mac);
 		break;
 	case DP_STATUS_EDP:
 		DEBUG_PRINTLN(F("EDP!"));
 		received_time_update();
-		edp_packet_handler(p_packet, &packet_index, received_packet_length - packet_index, psource_mac);
+		edp_packet_handler(p_packet, &packet_index, received_packet_length /* 20211021 - fix cdp summary garbled *//* - packet_index */, psource_mac);
 		break;
 	case DP_STATUS_LLDP:
 	case DP_STATUS_LLDP_ETHERNET_II:
 		DEBUG_PRINTLN(F("LLDP!"));
 		received_time_update();
-		lldp_packet_handler(p_packet, &packet_index, received_packet_length - packet_index, psource_mac);
+		lldp_packet_handler(p_packet, &packet_index, received_packet_length /* 20211021 - fix cdp summary garbled *//* - packet_index */, psource_mac);
 		break;
 	case DP_STATUS_ICMP:
 		DEBUG_PRINTLN(F("Ping response!"));
 		received_time_update();
-		icmp_packet_handler(p_packet, &packet_index, received_packet_length - packet_index, psource_mac);
+		icmp_packet_handler(p_packet, &packet_index, received_packet_length /* 20211021 - fix cdp summary garbled *//* - packet_index */, psource_mac);
 		break;
 
 	case DP_STATUS_OTHER_PACKET:
 		// To show infomation that sniffer is receiving
 		DEBUG_PRINTLN(F("Other packet!"));
 		received_time_update();
-		other_packet_handler(p_packet, &packet_index, received_packet_length - packet_index, psource_mac); 
+		other_packet_handler(p_packet, &packet_index, received_packet_length /* 20211021 - fix cdp summary garbled *//* - packet_index */, psource_mac); 
 
 		break;
 	default:
